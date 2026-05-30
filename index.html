@@ -23,6 +23,7 @@ html[data-theme="light"]{
   --sd:rgba(170,174,190,.55); --sl:rgba(255,255,255,.95);
   --line:rgba(0,0,0,.05);
   --pos:#2f9e6f; --neg:#cf6b6b;
+  --pos-soft:rgba(47,158,111,.13); --neg-soft:rgba(207,107,107,.13);
   --r:20px;
 }
 html[data-theme="dark"]{
@@ -32,6 +33,7 @@ html[data-theme="dark"]{
   --sd:rgba(0,0,0,.5); --sl:rgba(255,255,255,.045);
   --line:rgba(255,255,255,.06);
   --pos:#5fb98a; --neg:#d98484;
+  --pos-soft:rgba(95,185,138,.16); --neg-soft:rgba(217,132,132,.16);
   --r:20px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -110,17 +112,19 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .check.on{background:var(--active);color:var(--active-ink);
   box-shadow:4px 4px 10px var(--sd),-4px -4px 10px var(--sl)}
 
-/* labeled "Entered in Zoho" toggle row */
+/* labeled "Entered in Zoho" toggle row — RED = not entered, GREEN = entered */
 .zoho-row{width:100%;display:flex;align-items:center;justify-content:space-between;border:none;cursor:pointer;
   border-radius:14px;padding:13px 15px;margin-bottom:6px;font-family:'Manrope';transition:all .2s;
-  background:var(--inset);box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
-.zoho-row .zlabel{font-weight:700;font-size:14px;color:var(--muted);letter-spacing:-.01em}
+  background:var(--neg-soft);box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
+.zoho-row .zlabel{font-weight:700;font-size:14px;letter-spacing:-.01em;color:var(--neg)}
+.zoho-row .zlabel::before{content:"Not entered in Zoho"}
 .zoho-row .zcheck{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-  background:var(--raised);color:var(--faint);box-shadow:2px 2px 5px var(--sd),-2px -2px 5px var(--sl);transition:all .2s}
+  background:var(--neg);color:#fff;box-shadow:2px 2px 5px var(--sd),-2px -2px 5px var(--sl);transition:all .2s}
 .zoho-row .zcheck svg{width:17px;height:17px;opacity:0;transition:opacity .2s}
-.zoho-row.on{background:var(--active);box-shadow:4px 4px 11px var(--sd),-4px -4px 11px var(--sl)}
-.zoho-row.on .zlabel{color:var(--active-ink)}
-.zoho-row.on .zcheck{background:var(--active-ink);color:var(--active)}
+.zoho-row.on{background:var(--pos-soft);box-shadow:4px 4px 11px var(--sd),-4px -4px 11px var(--sl)}
+.zoho-row.on .zlabel{color:var(--pos)}
+.zoho-row.on .zlabel::before{content:"Entered in Zoho"}
+.zoho-row.on .zcheck{background:var(--pos);color:#fff}
 .zoho-row.on .zcheck svg{opacity:1}
 
 /* scope segmented toggle */
@@ -278,7 +282,7 @@ function cardHTML(it){
       <button class="noteclear ${it.note?'show':''}" title="Clear note">✕</button>
     </div>
     <button class="zoho-row ${it.entered?'on':''}" data-k="entered">
-      <span class="zlabel">Entered in Zoho</span>
+      <span class="zlabel"></span>
       <span class="zcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
     </button>
     <div class="cfoot">
