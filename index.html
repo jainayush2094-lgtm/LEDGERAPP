@@ -110,6 +110,19 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .check.on{background:var(--active);color:var(--active-ink);
   box-shadow:4px 4px 10px var(--sd),-4px -4px 10px var(--sl)}
 
+/* labeled "Entered in Zoho" toggle row */
+.zoho-row{width:100%;display:flex;align-items:center;justify-content:space-between;border:none;cursor:pointer;
+  border-radius:14px;padding:13px 15px;margin-bottom:6px;font-family:'Manrope';transition:all .2s;
+  background:var(--inset);box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
+.zoho-row .zlabel{font-weight:700;font-size:14px;color:var(--muted);letter-spacing:-.01em}
+.zoho-row .zcheck{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  background:var(--raised);color:var(--faint);box-shadow:2px 2px 5px var(--sd),-2px -2px 5px var(--sl);transition:all .2s}
+.zoho-row .zcheck svg{width:17px;height:17px;opacity:0;transition:opacity .2s}
+.zoho-row.on{background:var(--active);box-shadow:4px 4px 11px var(--sd),-4px -4px 11px var(--sl)}
+.zoho-row.on .zlabel{color:var(--active-ink)}
+.zoho-row.on .zcheck{background:var(--active-ink);color:var(--active)}
+.zoho-row.on .zcheck svg{opacity:1}
+
 /* scope segmented toggle */
 .seg{display:flex;gap:5px;padding:5px;border-radius:13px;margin-bottom:11px;background:var(--inset);
   box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
@@ -173,7 +186,6 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
     <div class="scard"><div class="lab">Received · this month</div><div class="val pos" id="sRec">₹0</div></div>
     <div class="scard wide">
       <div><div class="lab">Net this month</div><div class="val" id="sNet">₹0</div></div>
-      <div class="pendpill" id="sPend">0 to enter</div>
     </div>
   </div>
 
@@ -251,9 +263,6 @@ function cardHTML(it){
     <div class="crow1">
       <div class="amtwrap"><span class="cur">₹</span>
         <input class="amt" inputmode="decimal" placeholder="0" value="${esc(it.amount)}" data-k="amount"></div>
-      <button class="check ${it.entered?'on':''}" data-k="entered" title="Mark as entered in Zoho">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      </button>
     </div>
     <div class="seg">
       <button class="${it.scope==='business'?'sel':''}" data-scope="business">Business</button>
@@ -268,6 +277,10 @@ function cardHTML(it){
       <textarea class="note" placeholder="Note — vendor, invoice no., what it was for…" data-k="note">${esc(it.note)}</textarea>
       <button class="noteclear ${it.note?'show':''}" title="Clear note">✕</button>
     </div>
+    <button class="zoho-row ${it.entered?'on':''}" data-k="entered">
+      <span class="zlabel">Entered in Zoho</span>
+      <span class="zcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+    </button>
     <div class="cfoot">
       <span class="stamp">${it.entered?'ENTERED ✓':'PENDING'}</span>
       <button class="del">Delete</button>
@@ -278,7 +291,7 @@ function cardHTML(it){
 function wire(card){
   const it=items.find(x=>x.id===card.dataset.id);
   card.querySelectorAll('[data-k]').forEach(el=>{
-    if(el.classList.contains('check')) return;
+    if(el.dataset.k==='entered') return;
     const k=el.dataset.k, ev=(el.tagName==='SELECT'||el.type==='date')?'change':'input';
     el.addEventListener(ev,()=>{
       it[k]=el.value; save();
@@ -287,7 +300,7 @@ function wire(card){
     });
   });
   // entered toggle
-  const chk=card.querySelector('.check');
+  const chk=card.querySelector('.zoho-row');
   chk.addEventListener('click',()=>{
     it.entered=!it.entered; save();
     chk.classList.toggle('on',it.entered);
@@ -361,8 +374,6 @@ function refreshCounts(){
     personal:rows.filter(x=>x.scope==='personal').length,
     pending:rows.filter(x=>!x.entered).length};
   for(const k in cnt){const el=document.getElementById('c-'+k);if(el)el.textContent=cnt[k];}
-  const totalPend=items.filter(x=>!x.entered).length;
-  document.getElementById('sPend').textContent=totalPend+' to enter';
 }
 
 /* ================= BACKUP / RESTORE ================= */
