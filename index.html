@@ -95,15 +95,40 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .chip.active{background:var(--active);color:var(--active-ink)}
 .chip .n{font-family:'JetBrains Mono',monospace;opacity:.65;margin-left:3px}
 
+/* ================= FILTER BAR (category + method) ================= */
+.filterbar{display:flex;gap:8px;margin-bottom:14px}
+.filterbar select{flex:1;min-width:0;border:none;border-radius:12px;padding:10px 12px;color:var(--ink);
+  font-family:'Manrope';font-weight:700;font-size:12.5px;background:var(--inset);
+  box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl);
+  appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 16px,calc(100% - 11px) 16px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:28px}
+.filterbar select:focus{outline:none}
+.filterbar select.set{color:var(--ink);background-image:linear-gradient(45deg,transparent 50%,var(--active) 50%),linear-gradient(135deg,var(--active) 50%,transparent 50%);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--active) 45%,transparent),inset 3px 3px 7px var(--sd)}
+
 /* ================= ADD BUTTON ================= */
 .addbtn{width:100%;border:none;border-radius:16px;background:var(--active);color:var(--active-ink);
   font-family:'Manrope';font-weight:700;font-size:15px;padding:16px;cursor:pointer;margin-bottom:18px;
   box-shadow:6px 6px 14px var(--sd),-6px -6px 14px var(--sl);transition:transform .1s,box-shadow .15s;letter-spacing:-.01em}
 .addbtn:active{transform:scale(.99);box-shadow:3px 3px 9px var(--sd)}
 
-/* ================= ENTRY CARD ================= */
-.card{border-radius:var(--r);padding:16px;margin-bottom:14px;background:var(--raised);
-  box-shadow:6px 6px 16px var(--sd),-6px -6px 16px var(--sl);transition:opacity .2s,transform .2s}
+/* ================= COLLAPSED ROW ================= */
+.card{border-radius:16px;margin-bottom:10px;background:var(--raised);
+  box-shadow:5px 5px 13px var(--sd),-5px -5px 13px var(--sl);transition:opacity .2s,transform .2s}
+.rowhead{display:flex;align-items:center;gap:11px;padding:13px 14px;cursor:pointer}
+.rowdot{flex:0 0 auto;width:11px;height:11px;border-radius:50%;background:var(--neg)}
+.card.is-entered .rowdot{background:var(--pos)}
+.rowamt{flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:var(--ink);min-width:74px}
+.rowmid{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rowcat{font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rowcat .placeholder{color:var(--faint);font-weight:600;font-style:italic}
+.rowsub{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+.rowchev{flex:0 0 auto;width:18px;height:18px;color:var(--faint);transition:transform .22s}
+.card.open .rowchev{transform:rotate(180deg)}
+.cardbody{max-height:0;overflow:hidden;transition:max-height .28s ease}
+.cardbody-inner{padding:2px 14px 14px}
+
+/* ================= ENTRY CARD (expanded body) ================= */
 .crow1{display:flex;align-items:center;gap:12px;margin-bottom:13px}
 .amtwrap{flex:1;display:flex;align-items:center;gap:7px;border-radius:14px;padding:11px 14px;
   background:var(--inset);box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
@@ -221,6 +246,15 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
     <button class="chip" data-f="pending" onclick="setFilter('pending',this)">Pending <span class="n" id="c-pending">0</span></button>
   </div>
 
+  <div class="filterbar">
+    <select id="catFilter" onchange="setCatFilter(this.value)"></select>
+    <select id="methFilter" onchange="setMethFilter(this.value)">
+      <option value="">All methods</option>
+      <option value="Cash">Cash</option>
+      <option value="Bank Transfer">Bank Transfer</option>
+    </select>
+  </div>
+
   <button class="addbtn" id="addBtn" onclick="addEntry()">＋  Add expense</button>
 
   <div id="list"></div>
@@ -246,7 +280,7 @@ const KEY='ledger_capture_v1', TKEY='ledger_theme', OKEY='ledger_opening_v1';
 /* ================= STATE ================= */
 let items=[]; try{items=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){items=[];}
 let opening={cash:0,bank:0}; try{const o=JSON.parse(localStorage.getItem(OKEY));if(o&&typeof o.cash==='number')opening=o;}catch(e){}
-let curType='expense', filter='all';
+let curType='expense', filter='all', catFilter='', methFilter='';
 
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){}};
 const saveOpening=()=>{try{localStorage.setItem(OKEY,JSON.stringify(opening));}catch(e){}};
@@ -281,9 +315,20 @@ function setType(t,btn){
   btn.classList.add('active');
   document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x.dataset.f==='all'));
   document.getElementById('addBtn').textContent = t==='expense' ? '＋  Add expense' : '＋  Add payment received';
+  catFilter=''; methFilter='';
+  populateCatFilter();
+  document.getElementById('methFilter').value='';
+  document.getElementById('methFilter').classList.remove('set');
   render();
 }
-function setFilter(f,btn){filter=f;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render();}
+function setFilter(f,btn){filter=f;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));btn.classList.add('active');applyFilterAll();}
+function setCatFilter(v){catFilter=v;document.getElementById('catFilter').classList.toggle('set',!!v);applyFilterAll();}
+function setMethFilter(v){methFilter=v;document.getElementById('methFilter').classList.toggle('set',!!v);applyFilterAll();}
+function populateCatFilter(){
+  const sel=document.getElementById('catFilter');
+  sel.innerHTML='<option value="">All categories</option>'+CATS[curType].map(c=>`<option value="${c}">${c}</option>`).join('');
+  sel.value=''; sel.classList.remove('set');
+}
 
 /* ================= ADD ================= */
 function addEntry(){
@@ -292,47 +337,80 @@ function addEntry(){
 }
 
 /* ================= CARD ================= */
+function rowSummary(it){
+  const amt = it.amount ? '₹'+Number(it.amount).toLocaleString('en-IN') : '₹0';
+  const cat = it.cat ? esc(it.cat) : '<span class="placeholder">No category</span>';
+  const m = it.method || 'Cash';
+  const sub = `${m} · ${it.scope==='personal'?'Personal':'Business'} · ${niceDate(it.date)}`;
+  return {amt,cat,sub};
+}
 function cardHTML(it){
   const cats=['<option value="">Category…</option>'].concat(CATS[it.type].map(c=>`<option ${it.cat===c?'selected':''}>${c}</option>`)).join('');
   const meths=METHODS.map(m=>`<option ${it.method===m?'selected':''}>${m}</option>`).join('');
-  return `<div class="card" data-id="${it.id}">
-    <div class="crow1">
-      <div class="amtwrap"><span class="cur">₹</span>
-        <input class="amt" inputmode="decimal" placeholder="0" value="${esc(it.amount)}" data-k="amount"></div>
+  const s=rowSummary(it);
+  return `<div class="card ${it.entered?'is-entered':''}" data-id="${it.id}">
+    <div class="rowhead">
+      <span class="rowdot"></span>
+      <span class="rowamt">${s.amt}</span>
+      <span class="rowmid"><span class="rowcat">${s.cat}</span><span class="rowsub">${s.sub}</span></span>
+      <svg class="rowchev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
-    <div class="seg">
-      <button class="${it.scope==='business'?'sel':''}" data-scope="business">Business</button>
-      <button class="${it.scope==='personal'?'sel':''}" data-scope="personal">Personal</button>
-    </div>
-    <div class="frow">
-      <div class="fld"><label>Category</label><select data-k="cat">${cats}</select></div>
-      <div class="fld"><label>Method</label><select data-k="method">${meths}</select></div>
-      <div class="fld full"><label>Date</label><input type="date" data-k="date" value="${esc(it.date)}"></div>
-    </div>
-    <div class="notewrap">
-      <textarea class="note" placeholder="Note — vendor, invoice no., what it was for…" data-k="note">${esc(it.note)}</textarea>
-      <button class="noteclear ${it.note?'show':''}" title="Clear note">✕</button>
-    </div>
-    <button class="zoho-row ${it.entered?'on':''}" data-k="entered">
-      <span class="zlabel"></span>
-      <span class="zcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-    </button>
-    <div class="cfoot">
-      <span class="stamp">${it.entered?'ENTERED ✓':'PENDING'}</span>
-      <button class="del">Delete</button>
-    </div>
+    <div class="cardbody"><div class="cardbody-inner">
+      <div class="crow1">
+        <div class="amtwrap"><span class="cur">₹</span>
+          <input class="amt" inputmode="decimal" placeholder="0" value="${esc(it.amount)}" data-k="amount"></div>
+      </div>
+      <div class="seg">
+        <button class="${it.scope==='business'?'sel':''}" data-scope="business">Business</button>
+        <button class="${it.scope==='personal'?'sel':''}" data-scope="personal">Personal</button>
+      </div>
+      <div class="frow">
+        <div class="fld"><label>Category</label><select data-k="cat">${cats}</select></div>
+        <div class="fld"><label>Method</label><select data-k="method">${meths}</select></div>
+        <div class="fld full"><label>Date</label><input type="date" data-k="date" value="${esc(it.date)}"></div>
+      </div>
+      <div class="notewrap">
+        <textarea class="note" placeholder="Note — vendor, invoice no., what it was for…" data-k="note">${esc(it.note)}</textarea>
+        <button class="noteclear ${it.note?'show':''}" title="Clear note">✕</button>
+      </div>
+      <button class="zoho-row ${it.entered?'on':''}" data-k="entered">
+        <span class="zlabel"></span>
+        <span class="zcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+      </button>
+      <div class="cfoot">
+        <span class="stamp">${it.entered?'ENTERED ✓':'PENDING'}</span>
+        <button class="del">Delete</button>
+      </div>
+    </div></div>
   </div>`;
+}
+function refreshRow(card,it){
+  const s=rowSummary(it);
+  card.querySelector('.rowamt').textContent=s.amt;
+  card.querySelector('.rowcat').innerHTML=s.cat;
+  card.querySelector('.rowsub').textContent=s.sub;
+  card.classList.toggle('is-entered',it.entered);
+}
+function toggleCard(card){
+  const body=card.querySelector('.cardbody');
+  const open=card.classList.toggle('open');
+  body.style.maxHeight = open ? (body.firstElementChild.scrollHeight+8)+'px' : '0px';
 }
 
 function wire(card){
   const it=items.find(x=>x.id===card.dataset.id);
+  // expand/collapse on row head tap
+  card.querySelector('.rowhead').addEventListener('click',()=>toggleCard(card));
   card.querySelectorAll('[data-k]').forEach(el=>{
     if(el.dataset.k==='entered') return;
     const k=el.dataset.k, ev=(el.tagName==='SELECT'||el.type==='date')?'change':'input';
     el.addEventListener(ev,()=>{
       it[k]=el.value; save();
+      refreshRow(card,it);
       if(k==='amount') refreshSummary();
       if(k==='note') card.querySelector('.noteclear').classList.toggle('show',!!el.value);
+      if(k==='method'){ refreshSummary(); if(methFilter) applyFilterTo(card); }
+      if(k==='cat'&&catFilter) applyFilterTo(card);
     });
   });
   // entered toggle
@@ -341,6 +419,7 @@ function wire(card){
     it.entered=!it.entered; save();
     chk.classList.toggle('on',it.entered);
     card.querySelector('.stamp').textContent=it.entered?'ENTERED ✓':'PENDING';
+    refreshRow(card,it);
     refreshCounts();
     if(filter==='pending') applyFilterTo(card);
   });
@@ -348,6 +427,7 @@ function wire(card){
   card.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
     it.scope=b.dataset.scope; save();
     card.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('sel',x===b));
+    refreshRow(card,it);
     refreshCounts();
     if(filter==='business'||filter==='personal') applyFilterTo(card);
   }));
@@ -373,7 +453,10 @@ function render(focusFirst){
   listEl.innerHTML = rows.length ? rows.map(cardHTML).join('') : '';
   listEl.querySelectorAll('.card').forEach(wire);
   refreshSummary(); checkEmpty(); applyFilterAll();
-  if(focusFirst){const f=listEl.querySelector('.amt');if(f){f.focus();listEl.querySelector('.card').scrollIntoView({behavior:'smooth',block:'center'});}}
+  if(focusFirst){
+    const first=listEl.querySelector('.card');
+    if(first){ toggleCard(first); const f=first.querySelector('.amt'); if(f)f.focus(); first.scrollIntoView({behavior:'smooth',block:'center'}); }
+  }
 }
 function checkEmpty(){
   if(!listEl.querySelector('.card')){
@@ -387,6 +470,8 @@ function applyFilterTo(card){
   if(filter==='business') show=it.scope==='business';
   else if(filter==='personal') show=it.scope==='personal';
   else if(filter==='pending') show=!it.entered;
+  if(show&&catFilter) show=(it.cat===catFilter);
+  if(show&&methFilter) show=((it.method||'Cash')===methFilter);
   card.style.display=show?'':'none';
 }
 
@@ -450,6 +535,7 @@ function importData(ev){
 /* ================= SW ================= */
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 
+populateCatFilter();
 render();
 </script>
 </body>
