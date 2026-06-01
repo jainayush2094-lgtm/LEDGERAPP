@@ -66,6 +66,16 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .tab.active{background:var(--active);color:var(--active-ink);box-shadow:3px 3px 8px var(--sd)}
 
 /* ================= SUMMARY ================= */
+.balance{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.bcard{border-radius:var(--r);padding:16px 16px;background:var(--raised);cursor:pointer;
+  box-shadow:6px 6px 16px var(--sd),-6px -6px 16px var(--sl);transition:transform .1s}
+.bcard:active{transform:scale(.985)}
+.bhead{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.blab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.bedit{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:700;
+  background:var(--inset);padding:3px 7px;border-radius:7px;box-shadow:inset 2px 2px 4px var(--sd),inset -2px -2px 4px var(--sl)}
+.bval{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:23px;margin-top:11px;color:var(--ink);font-variant-numeric:tabular-nums}
+.bval.neg{color:var(--neg)}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .scard{border-radius:var(--r);padding:15px 16px;background:var(--raised);
   box-shadow:6px 6px 14px var(--sd),-6px -6px 14px var(--sl)}
@@ -185,6 +195,17 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
     <button class="tab" data-type="received" onclick="setType('received',this)">Received</button>
   </div>
 
+  <div class="balance">
+    <div class="bcard" onclick="editOpening('cash')">
+      <div class="bhead"><span class="blab">Cash in hand</span><span class="bedit">edit start</span></div>
+      <div class="bval num" id="bCash">₹0</div>
+    </div>
+    <div class="bcard" onclick="editOpening('bank')">
+      <div class="bhead"><span class="blab">Bank balance</span><span class="bedit">edit start</span></div>
+      <div class="bval num" id="bBank">₹0</div>
+    </div>
+  </div>
+
   <div class="summary">
     <div class="scard"><div class="lab">Spent · this month</div><div class="val neg" id="sExp">₹0</div></div>
     <div class="scard"><div class="lab">Received · this month</div><div class="val pos" id="sRec">₹0</div></div>
@@ -219,14 +240,25 @@ const CATS = {
             "Marketing","Office Supplies","Repairs / Maintenance","Travel","Food","GST / Tax","Personal","Other"],
   received: ["Customer Payment","Dealer Payment","Advance","Refund","Interest","Personal","Other"]
 };
-const METHODS = ["Cash","UPI","Bank Transfer","Card","Cheque"];
-const KEY='ledger_capture_v1', TKEY='ledger_theme';
+const METHODS = ["Cash","Bank Transfer"];
+const KEY='ledger_capture_v1', TKEY='ledger_theme', OKEY='ledger_opening_v1';
 
 /* ================= STATE ================= */
 let items=[]; try{items=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){items=[];}
+let opening={cash:0,bank:0}; try{const o=JSON.parse(localStorage.getItem(OKEY));if(o&&typeof o.cash==='number')opening=o;}catch(e){}
 let curType='expense', filter='all';
 
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){}};
+const saveOpening=()=>{try{localStorage.setItem(OKEY,JSON.stringify(opening));}catch(e){}};
+function editOpening(which){
+  const label = which==='cash' ? 'cash in hand' : 'bank';
+  const cur = opening[which]||0;
+  const val = prompt('Starting '+label+' balance (₹).\nEnter your real balance before you began logging:', cur);
+  if(val===null) return;
+  const n = parseFloat(String(val).replace(/[, ₹]/g,''));
+  if(isNaN(n)){ alert('Please enter a number.'); return; }
+  opening[which]=n; saveOpening(); refreshSummary();
+}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const fmt=n=>{const v=Math.round(parseFloat(n)||0);return '₹'+v.toLocaleString('en-IN');};
@@ -360,10 +392,22 @@ function applyFilterTo(card){
 
 /* ================= SUMMARY ================= */
 function thisMonth(s){const n=new Date();return s&&s.slice(0,7)===n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
+function methodKey(m){return m==='Cash'?'cash':'bank';}  // UPI/Card/Cheque/Bank Transfer all count as bank
 function refreshSummary(){
   let exp=0,rec=0;
-  items.forEach(it=>{const a=parseFloat(it.amount)||0;if(!thisMonth(it.date))return;
-    if(it.type==='expense')exp+=a; else rec+=a;});
+  // running balances start from opening balances, count ALL entries (not just this month)
+  let bal={cash:opening.cash||0, bank:opening.bank||0};
+  items.forEach(it=>{
+    const a=parseFloat(it.amount)||0;
+    const k=methodKey(it.method);
+    if(it.type==='expense') bal[k]-=a; else bal[k]+=a;
+    if(thisMonth(it.date)){ if(it.type==='expense')exp+=a; else rec+=a; }
+  });
+  // balance cards
+  const bc=document.getElementById('bCash'), bb=document.getElementById('bBank');
+  bc.textContent=(bal.cash<0?'−':'')+fmt(Math.abs(bal.cash)); bc.className='bval num'+(bal.cash<0?' neg':'');
+  bb.textContent=(bal.bank<0?'−':'')+fmt(Math.abs(bal.bank)); bb.className='bval num'+(bal.bank<0?' neg':'');
+  // monthly summary
   document.getElementById('sExp').textContent=fmt(exp);
   document.getElementById('sRec').textContent=fmt(rec);
   const net=rec-exp, ne=document.getElementById('sNet');
@@ -382,15 +426,19 @@ function refreshCounts(){
 
 /* ================= BACKUP / RESTORE ================= */
 function exportData(){
-  const blob=new Blob([JSON.stringify(items,null,2)],{type:'application/json'});
+  const payload={opening:opening, items:items};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='ledger-backup-'+today()+'.json';a.click();URL.revokeObjectURL(a.href);
 }
 function importData(ev){
   const f=ev.target.files[0];if(!f)return;const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);
-    if(Array.isArray(d)){if(!confirm('Replace current data with backup ('+d.length+' entries)?'))return;
-      items=d.map(x=>({id:x.id||uid(),type:x.type==='received'?'received':'expense',amount:x.amount||'',
+    // new format: {opening, items}  |  old format: [ ...items ]
+    const arr = Array.isArray(d) ? d : (d&&Array.isArray(d.items) ? d.items : null);
+    if(arr){if(!confirm('Replace current data with backup ('+arr.length+' entries)?'))return;
+      if(d&&d.opening&&typeof d.opening.cash==='number'){opening=d.opening;saveOpening();}
+      items=arr.map(x=>({id:x.id||uid(),type:x.type==='received'?'received':'expense',amount:x.amount||'',
         cat:x.cat||'',scope:x.scope==='personal'?'personal':'business',method:x.method||'Cash',
         date:x.date||today(),note:x.note||'',entered:!!x.entered}));
       save();render();}
