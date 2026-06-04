@@ -24,6 +24,7 @@ html[data-theme="light"]{
   --line:rgba(0,0,0,.05);
   --pos:#2f9e6f; --neg:#cf6b6b;
   --pos-soft:rgba(47,158,111,.13); --neg-soft:rgba(207,107,107,.13);
+  --note:#3b73d6;
   --r:20px;
 }
 html[data-theme="dark"]{
@@ -34,6 +35,7 @@ html[data-theme="dark"]{
   --line:rgba(255,255,255,.06);
   --pos:#5fb98a; --neg:#d98484;
   --pos-soft:rgba(95,185,138,.16); --neg-soft:rgba(217,132,132,.16);
+  --note:#6f9bf2;
   --r:20px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -123,6 +125,9 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .rowcat{font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rowcat .placeholder{color:var(--faint);font-weight:600;font-style:italic}
 .rowsub{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+.rownote{font-size:12px;font-weight:600;color:var(--note);margin-top:3px;line-height:1.35;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rownote:empty{display:none}
 .rowchev{flex:0 0 auto;width:18px;height:18px;color:var(--faint);transition:transform .22s}
 .card.open .rowchev{transform:rotate(180deg)}
 .cardbody{max-height:0;overflow:hidden;transition:max-height .28s ease}
@@ -260,7 +265,7 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
   <div id="list"></div>
 
   <footer>
-    ON-DEVICE · v1 &nbsp;·&nbsp;
+    ON-DEVICE · v6 &nbsp;·&nbsp;
     <a onclick="exportData()">Backup</a> &nbsp;·&nbsp;
     <a onclick="document.getElementById('imp').click()">Restore</a>
     <input id="imp" class="hid" type="file" accept="application/json" onchange="importData(event)">
@@ -342,7 +347,8 @@ function rowSummary(it){
   const cat = it.cat ? esc(it.cat) : '<span class="placeholder">No category</span>';
   const m = it.method || 'Cash';
   const sub = `${m} · ${it.scope==='personal'?'Personal':'Business'} · ${niceDate(it.date)}`;
-  return {amt,cat,sub};
+  const note = it.note ? esc(it.note.trim()) : '';
+  return {amt,cat,sub,note};
 }
 function cardHTML(it){
   const cats=['<option value="">Category…</option>'].concat(CATS[it.type].map(c=>`<option ${it.cat===c?'selected':''}>${c}</option>`)).join('');
@@ -352,7 +358,7 @@ function cardHTML(it){
     <div class="rowhead">
       <span class="rowdot"></span>
       <span class="rowamt">${s.amt}</span>
-      <span class="rowmid"><span class="rowcat">${s.cat}</span><span class="rowsub">${s.sub}</span></span>
+      <span class="rowmid"><span class="rowcat">${s.cat}</span><span class="rowsub">${s.sub}</span><span class="rownote">${s.note}</span></span>
       <svg class="rowchev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
     <div class="cardbody"><div class="cardbody-inner">
@@ -389,6 +395,7 @@ function refreshRow(card,it){
   card.querySelector('.rowamt').textContent=s.amt;
   card.querySelector('.rowcat').innerHTML=s.cat;
   card.querySelector('.rowsub').textContent=s.sub;
+  card.querySelector('.rownote').textContent=s.note;
   card.classList.toggle('is-entered',it.entered);
 }
 function toggleCard(card){
