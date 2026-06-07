@@ -123,6 +123,10 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
   background:var(--active);color:var(--active-ink);box-shadow:5px 5px 12px var(--sd),-5px -5px 12px var(--sl)}
 .filtertotal .ft-lab{font-family:'Manrope';font-weight:700;font-size:12.5px;opacity:.85}
 .filtertotal .ft-val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px}
+.markall{width:100%;border:none;border-radius:14px;padding:14px;margin-bottom:14px;cursor:pointer;
+  font-family:'Manrope';font-weight:700;font-size:14px;color:#fff;background:var(--pos);
+  box-shadow:5px 5px 12px var(--sd),-5px -5px 12px var(--sl);transition:transform .1s}
+.markall:active{transform:scale(.99)}
 
 /* ================= ADD BUTTON ================= */
 .addbtn{width:100%;border:none;border-radius:16px;background:var(--active);color:var(--active-ink);
@@ -341,13 +345,14 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
   </div>
 
   <div class="filtertotal hid" id="filterTotal"></div>
+  <button class="markall hid" id="markAllBtn" onclick="markAllEnteredInView()"></button>
 
   <button class="addbtn" id="addBtn" onclick="addEntry()">＋  Add expense</button>
 
   <div id="list"></div>
 
   <footer>
-    ON-DEVICE · v9 &nbsp;·&nbsp;
+    ON-DEVICE · v10 &nbsp;·&nbsp;
     <a onclick="openExport()">Export PDF</a> &nbsp;·&nbsp;
     <a onclick="exportData()">Backup</a> &nbsp;·&nbsp;
     <a onclick="document.getElementById('imp').click()">Restore</a>
@@ -631,13 +636,26 @@ function applyFilterTo(card){
 }
 function refreshFilterTotal(){
   const bar=document.getElementById('filterTotal');
+  const btn=document.getElementById('markAllBtn');
   const active = filter!=='all' || catFilter || methFilter || listFrom || listTo;
-  if(!active){ bar.classList.add('hid'); return; }
-  let total=0,n=0;
-  items.filter(x=>x.type===curType).forEach(it=>{if(rowVisible(it)){total+=parseFloat(it.amount)||0;n++;}});
+  if(!active){ bar.classList.add('hid'); btn.classList.add('hid'); return; }
+  let total=0,n=0,pending=0;
+  items.filter(x=>x.type===curType).forEach(it=>{if(rowVisible(it)){total+=parseFloat(it.amount)||0;n++;if(!it.entered)pending++;}});
   let label = catFilter ? catFilter : (curType==='expense'?'Expenses':'Received');
   bar.innerHTML=`<span class="ft-lab">${esc(label)} · ${n} ${n===1?'entry':'entries'}</span><span class="ft-val">${fmt(total)}</span>`;
   bar.classList.remove('hid');
+  if(pending>0){
+    btn.textContent='✓  Mark '+pending+' '+(pending===1?'item':'items')+' entered in Zoho';
+    btn.classList.remove('hid');
+  } else { btn.classList.add('hid'); }
+}
+function markAllEnteredInView(){
+  const targets=items.filter(x=>x.type===curType&&rowVisible(x)&&!x.entered);
+  if(!targets.length) return;
+  const label = catFilter ? '“'+catFilter+'”' : 'this view';
+  if(!confirm('Mark '+targets.length+' pending '+(targets.length===1?'item':'items')+' in '+label+' as entered in Zoho?\n\n(This updates the app\'s tracker — enter them in Zoho Books first.)')) return;
+  targets.forEach(it=>{it.entered=true;});
+  save(); render();
 }
 
 /* ================= SUMMARY ================= */
