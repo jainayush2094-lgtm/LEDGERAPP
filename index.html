@@ -107,6 +107,22 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
   background-position:calc(100% - 16px) 16px,calc(100% - 11px) 16px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:28px}
 .filterbar select:focus{outline:none}
 .filterbar select.set{color:var(--ink);background-image:linear-gradient(45deg,transparent 50%,var(--active) 50%),linear-gradient(135deg,var(--active) 50%,transparent 50%);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--active) 45%,transparent),inset 3px 3px 7px var(--sd)}
+.datebtn{flex:1;min-width:0;border:none;border-radius:12px;padding:10px 12px;color:var(--muted);font-family:'Manrope';
+  font-weight:700;font-size:12.5px;background:var(--inset);cursor:pointer;
+  box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
+.datebtn.set{color:var(--ink);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--active) 45%,transparent),inset 3px 3px 7px var(--sd)}
+.daterange{display:flex;gap:9px;align-items:flex-end;margin-bottom:14px}
+.daterange .fld{flex:1}
+.daterange label{display:block;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 5px 3px}
+.daterange input{width:100%;border:none;border-radius:11px;padding:10px 11px;color:var(--ink);font-family:'Manrope';font-weight:600;font-size:13px;
+  background:var(--inset);box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
+.daterange input:focus{outline:none}
+.dateclear{flex:0 0 auto;border:none;border-radius:11px;padding:11px 13px;color:var(--muted);font-family:'Manrope';font-weight:700;font-size:12px;
+  background:var(--inset);cursor:pointer;box-shadow:inset 2px 2px 5px var(--sd),inset -2px -2px 5px var(--sl)}
+.filtertotal{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding:13px 16px;border-radius:14px;
+  background:var(--active);color:var(--active-ink);box-shadow:5px 5px 12px var(--sd),-5px -5px 12px var(--sl)}
+.filtertotal .ft-lab{font-family:'Manrope';font-weight:700;font-size:12.5px;opacity:.85}
+.filtertotal .ft-val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px}
 
 /* ================= ADD BUTTON ================= */
 .addbtn{width:100%;border:none;border-radius:16px;background:var(--active);color:var(--active-ink);
@@ -308,12 +324,30 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
     </select>
   </div>
 
+  <div class="filterbar">
+    <select id="sortSel" onchange="setSort(this.value)">
+      <option value="new">Newest first</option>
+      <option value="old">Oldest first</option>
+      <option value="hi">Amount: high → low</option>
+      <option value="lo">Amount: low → high</option>
+    </select>
+    <button class="datebtn" id="dateToggle" onclick="toggleDateRange()">Date range</button>
+  </div>
+
+  <div class="daterange hid" id="dateRange">
+    <div class="fld"><label>From</label><input type="date" id="listFrom" onchange="setDateRange()"></div>
+    <div class="fld"><label>To</label><input type="date" id="listTo" onchange="setDateRange()"></div>
+    <button class="dateclear" id="dateClear" onclick="clearDateRange()">Clear</button>
+  </div>
+
+  <div class="filtertotal hid" id="filterTotal"></div>
+
   <button class="addbtn" id="addBtn" onclick="addEntry()">＋  Add expense</button>
 
   <div id="list"></div>
 
   <footer>
-    ON-DEVICE · v8 &nbsp;·&nbsp;
+    ON-DEVICE · v9 &nbsp;·&nbsp;
     <a onclick="openExport()">Export PDF</a> &nbsp;·&nbsp;
     <a onclick="exportData()">Backup</a> &nbsp;·&nbsp;
     <a onclick="document.getElementById('imp').click()">Restore</a>
@@ -324,7 +358,7 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
 <!-- ===== EXPORT MODAL ===== -->
 <div class="modal-ov" id="exportOv" onclick="if(event.target===this)closeExport()">
   <div class="modal">
-    <div class="modal-title">Export PDF statement</div>
+    <div class="modal-title">Export statement</div>
     <div class="seg" id="expType" style="margin-bottom:16px">
       <button class="sel" data-t="expense">Expenses</button>
       <button data-t="received">Received</button>
@@ -341,9 +375,10 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
     </div>
     <div class="modal-btns">
       <button class="mbtn ghost" onclick="closeExport()">Cancel</button>
-      <button class="mbtn solid" onclick="doExport()">Export PDF</button>
+      <button class="mbtn solid" onclick="doExportExcel()">Excel</button>
+      <button class="mbtn solid" onclick="doExport()">PDF</button>
     </div>
-    <div class="modal-hint">Opens your print screen — choose “Save as PDF”.</div>
+    <div class="modal-hint">PDF opens your print screen (choose “Save as PDF”). Excel downloads a .csv you can open in Excel, Sheets or Zoho.</div>
   </div>
 </div>
 
@@ -363,7 +398,7 @@ const KEY='ledger_capture_v1', TKEY='ledger_theme', OKEY='ledger_opening_v1';
 /* ================= STATE ================= */
 let items=[]; try{items=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){items=[];}
 let opening={cash:0,bank:0}; try{const o=JSON.parse(localStorage.getItem(OKEY));if(o&&typeof o.cash==='number')opening=o;}catch(e){}
-let curType='expense', filter='all', catFilter='', methFilter='';
+let curType='expense', filter='all', catFilter='', methFilter='', sortMode='new', listFrom='', listTo='';
 
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){}};
 const saveOpening=()=>{try{localStorage.setItem(OKEY,JSON.stringify(opening));}catch(e){}};
@@ -402,11 +437,29 @@ function setType(t,btn){
   populateCatFilter();
   document.getElementById('methFilter').value='';
   document.getElementById('methFilter').classList.remove('set');
+  sortMode='new'; document.getElementById('sortSel').value='new';
+  clearDateRange(true);
   render();
 }
-function setFilter(f,btn){filter=f;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));btn.classList.add('active');applyFilterAll();}
-function setCatFilter(v){catFilter=v;document.getElementById('catFilter').classList.toggle('set',!!v);applyFilterAll();}
-function setMethFilter(v){methFilter=v;document.getElementById('methFilter').classList.toggle('set',!!v);applyFilterAll();}
+function setFilter(f,btn){filter=f;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render();}
+function setCatFilter(v){catFilter=v;document.getElementById('catFilter').classList.toggle('set',!!v);render();}
+function setMethFilter(v){methFilter=v;document.getElementById('methFilter').classList.toggle('set',!!v);render();}
+function setSort(v){sortMode=v;render();}
+function toggleDateRange(){document.getElementById('dateRange').classList.toggle('hid');}
+function setDateRange(){
+  listFrom=document.getElementById('listFrom').value;
+  listTo=document.getElementById('listTo').value;
+  document.getElementById('dateToggle').classList.toggle('set',!!(listFrom||listTo));
+  render();
+}
+function clearDateRange(skipRender){
+  listFrom=''; listTo='';
+  const f=document.getElementById('listFrom'), t=document.getElementById('listTo');
+  if(f)f.value=''; if(t)t.value='';
+  document.getElementById('dateToggle').classList.remove('set');
+  document.getElementById('dateRange').classList.add('hid');
+  if(!skipRender) render();
+}
 function populateCatFilter(){
   const sel=document.getElementById('catFilter');
   sel.innerHTML='<option value="">All categories</option>'+CATS[curType].map(c=>`<option value="${c}">${c}</option>`).join('');
@@ -416,7 +469,9 @@ function populateCatFilter(){
 /* ================= ADD ================= */
 function addEntry(){
   const it={id:uid(),type:curType,amount:'',cat:'',scope:'business',method:'Cash',date:today(),note:'',entered:false};
-  items.unshift(it); save(); render(true);
+  items.unshift(it); save();
+  sortMode='new'; document.getElementById('sortSel').value='new';
+  render(true);
 }
 
 /* ================= CARD ================= */
@@ -494,8 +549,8 @@ function wire(card){
       refreshRow(card,it);
       if(k==='amount') refreshSummary();
       if(k==='note') card.querySelector('.noteclear').classList.toggle('show',!!el.value);
-      if(k==='method'){ refreshSummary(); if(methFilter) applyFilterTo(card); }
-      if(k==='cat'&&catFilter) applyFilterTo(card);
+      if(k==='method'){ refreshSummary(); applyFilterAll(); }
+      if(k==='cat'||k==='date'||k==='amount') applyFilterAll();
     });
   });
   // entered toggle
@@ -506,7 +561,7 @@ function wire(card){
     card.querySelector('.stamp').textContent=it.entered?'ENTERED ✓':'PENDING';
     refreshRow(card,it);
     refreshCounts();
-    if(filter==='pending') applyFilterTo(card);
+    applyFilterAll();
   });
   // scope
   card.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
@@ -514,7 +569,7 @@ function wire(card){
     card.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('sel',x===b));
     refreshRow(card,it);
     refreshCounts();
-    if(filter==='business'||filter==='personal') applyFilterTo(card);
+    applyFilterAll();
   }));
   // note clear
   card.querySelector('.noteclear').addEventListener('click',()=>{
@@ -533,8 +588,16 @@ function wire(card){
 
 /* ================= RENDER ================= */
 const listEl=document.getElementById('list');
+function sortRows(rows){
+  const r=rows.slice();
+  if(sortMode==='old') r.sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:0));
+  else if(sortMode==='hi') r.sort((a,b)=>(parseFloat(b.amount)||0)-(parseFloat(a.amount)||0));
+  else if(sortMode==='lo') r.sort((a,b)=>(parseFloat(a.amount)||0)-(parseFloat(b.amount)||0));
+  else r.sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:0)); // newest first
+  return r;
+}
 function render(focusFirst){
-  const rows=items.filter(x=>x.type===curType);
+  const rows=sortRows(items.filter(x=>x.type===curType));
   listEl.innerHTML = rows.length ? rows.map(cardHTML).join('') : '';
   listEl.querySelectorAll('.card').forEach(wire);
   refreshSummary(); checkEmpty(); applyFilterAll();
@@ -548,16 +611,33 @@ function checkEmpty(){
     listEl.innerHTML=`<div class="empty"><b>Nothing logged yet</b>Tap the button above to capture your first ${curType==='expense'?'expense':'payment'}.</div>`;
   }
 }
-function applyFilterAll(){listEl.querySelectorAll('.card').forEach(applyFilterTo);}
+function rowVisible(it){
+  if(filter==='business'&&it.scope!=='business') return false;
+  if(filter==='personal'&&it.scope!=='personal') return false;
+  if(filter==='pending'&&it.entered) return false;
+  if(catFilter&&it.cat!==catFilter) return false;
+  if(methFilter&&(it.method||'Cash')!==methFilter) return false;
+  if(listFrom&&it.date<listFrom) return false;
+  if(listTo&&it.date>listTo) return false;
+  return true;
+}
+function applyFilterAll(){
+  listEl.querySelectorAll('.card').forEach(applyFilterTo);
+  refreshFilterTotal();
+}
 function applyFilterTo(card){
   const it=items.find(x=>x.id===card.dataset.id); if(!it)return;
-  let show=true;
-  if(filter==='business') show=it.scope==='business';
-  else if(filter==='personal') show=it.scope==='personal';
-  else if(filter==='pending') show=!it.entered;
-  if(show&&catFilter) show=(it.cat===catFilter);
-  if(show&&methFilter) show=((it.method||'Cash')===methFilter);
-  card.style.display=show?'':'none';
+  card.style.display=rowVisible(it)?'':'none';
+}
+function refreshFilterTotal(){
+  const bar=document.getElementById('filterTotal');
+  const active = filter!=='all' || catFilter || methFilter || listFrom || listTo;
+  if(!active){ bar.classList.add('hid'); return; }
+  let total=0,n=0;
+  items.filter(x=>x.type===curType).forEach(it=>{if(rowVisible(it)){total+=parseFloat(it.amount)||0;n++;}});
+  let label = catFilter ? catFilter : (curType==='expense'?'Expenses':'Received');
+  bar.innerHTML=`<span class="ft-lab">${esc(label)} · ${n} ${n===1?'entry':'entries'}</span><span class="ft-val">${fmt(total)}</span>`;
+  bar.classList.remove('hid');
 }
 
 /* ================= SUMMARY ================= */
@@ -662,6 +742,29 @@ function doExport(){
 
   closeExport();
   setTimeout(()=>window.print(), 250);
+}
+function csvCell(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function doExportExcel(){
+  const type=expType;
+  const from=document.getElementById('expFrom').value;
+  const to=document.getElementById('expTo').value;
+  let rows=items.filter(it=>it.type===type);
+  if(from) rows=rows.filter(it=>it.date>=from);
+  if(to) rows=rows.filter(it=>it.date<=to);
+  rows.sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:0));
+  if(!rows.length){ alert('No '+(type==='expense'?'expenses':'receipts')+' found in that date range.'); return; }
+  const head=['Date','Category','Method','Type','Note','Amount','Zoho'];
+  let total=0;
+  const lines=rows.map(it=>{const a=parseFloat(it.amount)||0;total+=a;
+    return [fullDate(it.date),it.cat||'',it.method||'Cash',it.scope==='personal'?'Personal':'Business',it.note||'',a,it.entered?'Entered':'Pending'].map(csvCell).join(',');});
+  lines.push(['','','','','TOTAL',total,''].map(csvCell).join(','));
+  const csv='\ufeff'+[head.join(','),...lines].join('\r\n'); // BOM for Excel ₹/UTF-8
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const tag=type==='expense'?'expenses':'receipts';
+  a.download='ledger-'+tag+'-'+(from||'all')+'_to_'+(to||'all')+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+  closeExport();
 }
 
 /* ================= BACKUP / RESTORE ================= */
