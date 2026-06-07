@@ -128,6 +128,22 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
   box-shadow:5px 5px 12px var(--sd),-5px -5px 12px var(--sl);transition:transform .1s}
 .markall:active{transform:scale(.99)}
 
+/* ===== ENTERED (collapsed) BAR ===== */
+.entered-wrap{margin-top:6px}
+.entered-bar{width:100%;display:flex;justify-content:space-between;align-items:center;border:none;cursor:pointer;
+  border-radius:14px;padding:14px 16px;font-family:'Manrope';background:var(--raised);color:var(--muted);
+  box-shadow:5px 5px 13px var(--sd),-5px -5px 13px var(--sl);transition:transform .1s}
+.entered-bar:active{transform:scale(.99)}
+.entered-bar .eb-left{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px}
+.entered-bar .eb-check{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;
+  background:var(--pos);color:#fff;font-size:12px;font-weight:800}
+.entered-bar .eb-right{display:flex;align-items:center;gap:9px}
+.entered-bar .eb-tot{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--ink)}
+.entered-bar .eb-chev{width:18px;height:18px;color:var(--faint);transition:transform .22s}
+.entered-wrap.open .eb-chev{transform:rotate(180deg)}
+.entered-list{display:none;margin-top:11px}
+.entered-list.open{display:block}
+
 /* ================= ADD BUTTON ================= */
 .addbtn{width:100%;border:none;border-radius:16px;background:var(--active);color:var(--active-ink);
   font-family:'Manrope';font-weight:700;font-size:15px;padding:16px;cursor:pointer;margin-bottom:18px;
@@ -352,7 +368,7 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
   <div id="list"></div>
 
   <footer>
-    ON-DEVICE · v10 &nbsp;·&nbsp;
+    ON-DEVICE · v11 &nbsp;·&nbsp;
     <a onclick="openExport()">Export PDF</a> &nbsp;·&nbsp;
     <a onclick="exportData()">Backup</a> &nbsp;·&nbsp;
     <a onclick="document.getElementById('imp').click()">Restore</a>
@@ -403,7 +419,7 @@ const KEY='ledger_capture_v1', TKEY='ledger_theme', OKEY='ledger_opening_v1';
 /* ================= STATE ================= */
 let items=[]; try{items=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){items=[];}
 let opening={cash:0,bank:0}; try{const o=JSON.parse(localStorage.getItem(OKEY));if(o&&typeof o.cash==='number')opening=o;}catch(e){}
-let curType='expense', filter='all', catFilter='', methFilter='', sortMode='new', listFrom='', listTo='';
+let curType='expense', filter='all', catFilter='', methFilter='', sortMode='new', listFrom='', listTo='', enteredOpen=false;
 
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){}};
 const saveOpening=()=>{try{localStorage.setItem(OKEY,JSON.stringify(opening));}catch(e){}};
@@ -552,21 +568,16 @@ function wire(card){
     el.addEventListener(ev,()=>{
       it[k]=el.value; save();
       refreshRow(card,it);
-      if(k==='amount') refreshSummary();
+      if(k==='amount'){ refreshSummary(); refreshFilterTotal(); }
       if(k==='note') card.querySelector('.noteclear').classList.toggle('show',!!el.value);
-      if(k==='method'){ refreshSummary(); applyFilterAll(); }
-      if(k==='cat'||k==='date'||k==='amount') applyFilterAll();
+      if(k==='cat'||k==='method'||k==='date') render(); // may move in/out of current filter
     });
   });
-  // entered toggle
+  // entered toggle — moves item between pending list and the Entered bar
   const chk=card.querySelector('.zoho-row');
   chk.addEventListener('click',()=>{
     it.entered=!it.entered; save();
-    chk.classList.toggle('on',it.entered);
-    card.querySelector('.stamp').textContent=it.entered?'ENTERED ✓':'PENDING';
-    refreshRow(card,it);
-    refreshCounts();
-    applyFilterAll();
+    render();
   });
   // scope
   card.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
@@ -574,7 +585,7 @@ function wire(card){
     card.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('sel',x===b));
     refreshRow(card,it);
     refreshCounts();
-    applyFilterAll();
+    if(filter==='business'||filter==='personal') render(); else refreshFilterTotal();
   }));
   // note clear
   card.querySelector('.noteclear').addEventListener('click',()=>{
@@ -587,7 +598,7 @@ function wire(card){
     if(!confirm('Delete this entry?'))return;
     items=items.filter(x=>x.id!==it.id); save();
     card.style.opacity='0'; card.style.transform='scale(.97)';
-    setTimeout(()=>{card.remove();refreshSummary();checkEmpty();},180);
+    setTimeout(()=>render(),180);
   });
 }
 
@@ -601,20 +612,54 @@ function sortRows(rows){
   else r.sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:0)); // newest first
   return r;
 }
+function baseMatch(it){
+  // all filters EXCEPT the pending/entered status
+  if(filter==='business'&&it.scope!=='business') return false;
+  if(filter==='personal'&&it.scope!=='personal') return false;
+  if(catFilter&&it.cat!==catFilter) return false;
+  if(methFilter&&(it.method||'Cash')!==methFilter) return false;
+  if(listFrom&&it.date<listFrom) return false;
+  if(listTo&&it.date>listTo) return false;
+  return true;
+}
 function render(focusFirst){
-  const rows=sortRows(items.filter(x=>x.type===curType));
-  listEl.innerHTML = rows.length ? rows.map(cardHTML).join('') : '';
+  const all=sortRows(items.filter(x=>x.type===curType));
+  const base=all.filter(baseMatch);
+  const pending=base.filter(x=>!x.entered);
+  const entered=base.filter(x=>x.entered);
+  let html='';
+  if(!all.length){
+    html=`<div class="empty"><b>Nothing logged yet</b>Tap the button above to capture your first ${curType==='expense'?'expense':'payment'}.</div>`;
+  } else if(!base.length){
+    html=`<div class="empty"><b>No matches</b>Nothing matches the current filter.</div>`;
+  } else {
+    html += pending.length ? pending.map(cardHTML).join('')
+      : `<div class="empty"><b>All caught up</b>No pending items here.</div>`;
+    if(filter!=='pending' && entered.length){
+      const tot=entered.reduce((s,x)=>s+(parseFloat(x.amount)||0),0);
+      html += `<div class="entered-wrap${enteredOpen?' open':''}">
+        <button class="entered-bar" onclick="toggleEntered()">
+          <span class="eb-left"><span class="eb-check">✓</span> Entered · ${entered.length} ${entered.length===1?'item':'items'}</span>
+          <span class="eb-right"><span class="eb-tot">${fmt(tot)}</span><svg class="eb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+        </button>
+        <div class="entered-list${enteredOpen?' open':''}">${entered.map(cardHTML).join('')}</div>
+      </div>`;
+    }
+  }
+  listEl.innerHTML=html;
   listEl.querySelectorAll('.card').forEach(wire);
-  refreshSummary(); checkEmpty(); applyFilterAll();
+  refreshSummary(); refreshFilterTotal();
   if(focusFirst){
     const first=listEl.querySelector('.card');
     if(first){ toggleCard(first); const f=first.querySelector('.amt'); if(f)f.focus(); first.scrollIntoView({behavior:'smooth',block:'center'}); }
   }
 }
-function checkEmpty(){
-  if(!listEl.querySelector('.card')){
-    listEl.innerHTML=`<div class="empty"><b>Nothing logged yet</b>Tap the button above to capture your first ${curType==='expense'?'expense':'payment'}.</div>`;
-  }
+function toggleEntered(){
+  enteredOpen=!enteredOpen;
+  const wrap=listEl.querySelector('.entered-wrap');
+  const list=listEl.querySelector('.entered-list');
+  if(wrap) wrap.classList.toggle('open',enteredOpen);
+  if(list) list.classList.toggle('open',enteredOpen);
 }
 function rowVisible(it){
   if(filter==='business'&&it.scope!=='business') return false;
