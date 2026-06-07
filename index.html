@@ -208,6 +208,51 @@ footer{text-align:center;margin-top:24px;font-family:'JetBrains Mono',monospace;
   color:var(--faint);letter-spacing:.1em}
 footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1px dotted var(--faint)}
 .hid{display:none}
+
+/* ===== EXPORT MODAL ===== */
+.modal-ov{position:fixed;inset:0;background:rgba(10,12,20,.45);backdrop-filter:blur(3px);z-index:100;
+  display:none;align-items:flex-end;justify-content:center;padding:0}
+.modal-ov.show{display:flex}
+.modal{width:100%;max-width:560px;background:var(--bg);border-radius:24px 24px 0 0;padding:22px 20px calc(26px + env(safe-area-inset-bottom));
+  box-shadow:0 -12px 40px rgba(0,0,0,.3)}
+.modal-title{font-family:'Fraunces',serif;font-weight:600;font-size:20px;color:var(--ink);margin-bottom:18px}
+.presets{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;margin-bottom:14px}
+.presets button{border:none;border-radius:10px;padding:9px 4px;font-family:'Manrope';font-weight:700;font-size:11px;
+  color:var(--muted);background:var(--inset);box-shadow:inset 2px 2px 5px var(--sd),inset -2px -2px 5px var(--sl);cursor:pointer}
+.presets button.on{color:var(--active-ink);background:var(--active);box-shadow:3px 3px 7px var(--sd)}
+.daterow{display:flex;gap:12px;margin-bottom:20px}
+.daterow .fld{flex:1}
+.daterow label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 5px 3px}
+.daterow input{width:100%;border:none;border-radius:11px;padding:11px 12px;color:var(--ink);font-family:'Manrope';
+  font-weight:600;font-size:14px;background:var(--inset);box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
+.daterow input:focus{outline:none}
+.modal-btns{display:flex;gap:11px}
+.mbtn{flex:1;border:none;border-radius:13px;padding:14px;font-family:'Manrope';font-weight:700;font-size:14px;cursor:pointer}
+.mbtn.ghost{background:var(--inset);color:var(--muted);box-shadow:inset 2px 2px 5px var(--sd),inset -2px -2px 5px var(--sl)}
+.mbtn.solid{background:var(--active);color:var(--active-ink);box-shadow:5px 5px 12px var(--sd),-5px -5px 12px var(--sl)}
+.mbtn:active{transform:scale(.98)}
+.modal-hint{text-align:center;font-size:11px;color:var(--faint);font-weight:600;margin-top:13px}
+
+/* ===== PRINT STATEMENT ===== */
+#printArea{display:none}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff!important}
+  body>.wrap,body>.modal-ov{display:none!important}
+  #printArea{display:block!important;color:#111;font-family:'Manrope',Arial,sans-serif}
+  #printArea .st-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:6px}
+  #printArea h2{font-size:22px;font-weight:800;margin:0}
+  #printArea .st-sub{font-size:12px;color:#555;margin-top:3px}
+  #printArea .st-meta{font-size:11px;color:#555;text-align:right}
+  #printArea table{width:100%;border-collapse:collapse;margin-top:14px;font-size:11.5px}
+  #printArea th{text-align:left;border-bottom:1.5px solid #111;padding:7px 6px;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+  #printArea td{padding:7px 6px;border-bottom:1px solid #ddd;vertical-align:top}
+  #printArea td.amt,#printArea th.amt{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  #printArea tr.tot td{border-top:2px solid #111;border-bottom:none;font-weight:800;font-size:13px;padding-top:10px}
+  #printArea .st-summary{margin-top:16px;font-size:12px;color:#333}
+  #printArea .st-summary span{display:inline-block;margin-right:22px}
+  #printArea .st-foot{margin-top:24px;font-size:10px;color:#888;border-top:1px solid #ddd;padding-top:8px}
+}
 </style>
 </head>
 <body>
@@ -265,12 +310,42 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
   <div id="list"></div>
 
   <footer>
-    ON-DEVICE · v6 &nbsp;·&nbsp;
+    ON-DEVICE · v7 &nbsp;·&nbsp;
+    <a onclick="openExport()">Export PDF</a> &nbsp;·&nbsp;
     <a onclick="exportData()">Backup</a> &nbsp;·&nbsp;
     <a onclick="document.getElementById('imp').click()">Restore</a>
     <input id="imp" class="hid" type="file" accept="application/json" onchange="importData(event)">
   </footer>
 </div>
+
+<!-- ===== EXPORT MODAL ===== -->
+<div class="modal-ov" id="exportOv" onclick="if(event.target===this)closeExport()">
+  <div class="modal">
+    <div class="modal-title">Export PDF statement</div>
+    <div class="seg" id="expType" style="margin-bottom:16px">
+      <button class="sel" data-t="expense">Expenses</button>
+      <button data-t="received">Received</button>
+    </div>
+    <div class="presets">
+      <button data-p="month">This month</button>
+      <button data-p="last">Last month</button>
+      <button data-p="fy">This FY</button>
+      <button data-p="all">All time</button>
+    </div>
+    <div class="daterow">
+      <div class="fld"><label>From</label><input type="date" id="expFrom"></div>
+      <div class="fld"><label>To</label><input type="date" id="expTo"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn ghost" onclick="closeExport()">Cancel</button>
+      <button class="mbtn solid" onclick="doExport()">Export PDF</button>
+    </div>
+    <div class="modal-hint">Opens your print screen — choose “Save as PDF”.</div>
+  </div>
+</div>
+
+<!-- ===== PRINTABLE STATEMENT (hidden on screen) ===== -->
+<div id="printArea"></div>
 
 <script>
 /* ================= CONFIG ================= */
@@ -516,6 +591,74 @@ function refreshCounts(){
   for(const k in cnt){const el=document.getElementById('c-'+k);if(el)el.textContent=cnt[k];}
 }
 
+/* ================= PDF STATEMENT EXPORT ================= */
+let expType='expense';
+function openExport(){
+  expType='expense';
+  document.querySelectorAll('#expType button').forEach(b=>b.classList.toggle('sel',b.dataset.t==='expense'));
+  applyPreset('month');
+  document.getElementById('exportOv').classList.add('show');
+}
+function closeExport(){document.getElementById('exportOv').classList.remove('show');}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function applyPreset(p){
+  const now=new Date(); let from,to;
+  if(p==='month'){from=new Date(now.getFullYear(),now.getMonth(),1);to=now;}
+  else if(p==='last'){from=new Date(now.getFullYear(),now.getMonth()-1,1);to=new Date(now.getFullYear(),now.getMonth(),0);}
+  else if(p==='fy'){const y=now.getMonth()>=3?now.getFullYear():now.getFullYear()-1;from=new Date(y,3,1);to=now;}
+  else {from=null;to=null;} // all time
+  document.getElementById('expFrom').value=from?ymd(from):'';
+  document.getElementById('expTo').value=to?ymd(to):'';
+  document.querySelectorAll('.presets button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+}
+function fullDate(s){if(!s)return '';const[y,m,d]=s.split('-');const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return (+d)+' '+mo[+m-1]+' '+y;}
+function doExport(){
+  const type=expType;
+  const from=document.getElementById('expFrom').value;
+  const to=document.getElementById('expTo').value;
+  let rows=items.filter(it=>it.type===type);
+  if(from) rows=rows.filter(it=>it.date>=from);
+  if(to) rows=rows.filter(it=>it.date<=to);
+  rows.sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:0));
+  if(!rows.length){ alert('No '+(type==='expense'?'expenses':'receipts')+' found in that date range.'); return; }
+
+  let total=0,cash=0,bank=0;
+  const body=rows.map((it,i)=>{
+    const a=parseFloat(it.amount)||0; total+=a;
+    if((it.method||'Cash')==='Cash')cash+=a; else bank+=a;
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${fullDate(it.date)}</td>
+      <td>${esc(it.cat||'—')}</td>
+      <td>${esc(it.method||'Cash')}</td>
+      <td>${it.scope==='personal'?'Personal':'Business'}</td>
+      <td>${esc(it.note||'')}</td>
+      <td class="amt">${fmt(a)}</td>
+    </tr>`;
+  }).join('');
+
+  const title = type==='expense' ? 'Expense Statement' : 'Payment Received Statement';
+  const period = (from||to) ? (fullDate(from)||'Beginning')+'  –  '+(fullDate(to)||'Today') : 'All time';
+  const gen = new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  document.getElementById('printArea').innerHTML = `
+    <div class="st-head">
+      <div><h2>${title}</h2><div class="st-sub">Ledger statement</div></div>
+      <div class="st-meta">Period<br><b>${period}</b></div>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>Date</th><th>Category</th><th>Method</th><th>Type</th><th>Note</th><th class="amt">Amount</th></tr></thead>
+      <tbody>${body}
+        <tr class="tot"><td colspan="6">Total — ${rows.length} ${type==='expense'?'expenses':'receipts'}</td><td class="amt">${fmt(total)}</td></tr>
+      </tbody>
+    </table>
+    <div class="st-summary"><span>Cash: <b>${fmt(cash)}</b></span><span>Bank: <b>${fmt(bank)}</b></span></div>
+    <div class="st-foot">Generated ${gen} · Ledger app</div>`;
+
+  closeExport();
+  setTimeout(()=>window.print(), 250);
+}
+
 /* ================= BACKUP / RESTORE ================= */
 function exportData(){
   const payload={opening:opening, items:items};
@@ -541,6 +684,13 @@ function importData(ev){
 
 /* ================= SW ================= */
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+
+// export modal wiring
+document.querySelectorAll('#expType button').forEach(b=>b.addEventListener('click',()=>{
+  expType=b.dataset.t;
+  document.querySelectorAll('#expType button').forEach(x=>x.classList.toggle('sel',x===b));
+}));
+document.querySelectorAll('.presets button').forEach(b=>b.addEventListener('click',()=>applyPreset(b.dataset.p)));
 
 populateCatFilter();
 render();
