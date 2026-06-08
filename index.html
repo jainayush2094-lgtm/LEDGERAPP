@@ -167,6 +167,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .rowchev{flex:0 0 auto;width:18px;height:18px;color:var(--faint);transition:transform .22s}
 .card.open .rowchev{transform:rotate(180deg)}
 .cardbody{max-height:0;overflow:hidden;transition:max-height .28s ease}
+.card.open .cardbody{max-height:none;overflow:visible}
 .cardbody-inner{padding:2px 14px 14px}
 
 /* ================= ENTRY CARD (expanded body) ================= */
@@ -368,7 +369,7 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
   <div id="list"></div>
 
   <footer>
-    ON-DEVICE · v11 &nbsp;·&nbsp;
+    ON-DEVICE · v13 &nbsp;·&nbsp;
     <a onclick="openExport()">Export PDF</a> &nbsp;·&nbsp;
     <a onclick="exportData()">Backup</a> &nbsp;·&nbsp;
     <a onclick="document.getElementById('imp').click()">Restore</a>
@@ -555,7 +556,15 @@ function refreshRow(card,it){
 function toggleCard(card){
   const body=card.querySelector('.cardbody');
   const open=card.classList.toggle('open');
-  body.style.maxHeight = open ? (body.firstElementChild.scrollHeight+8)+'px' : '0px';
+  if(open){
+    // animate from 0 to measured height, then release to auto so it can grow freely
+    body.style.maxHeight=(body.firstElementChild.scrollHeight+8)+'px';
+    setTimeout(()=>{ if(card.classList.contains('open')) body.style.maxHeight='none'; },300);
+  } else {
+    // animate shut: fix current height, then collapse to 0
+    body.style.maxHeight=(body.firstElementChild.scrollHeight+8)+'px';
+    requestAnimationFrame(()=>{ body.style.maxHeight='0px'; });
+  }
 }
 
 function wire(card){
@@ -569,8 +578,10 @@ function wire(card){
       it[k]=el.value; save();
       refreshRow(card,it);
       if(k==='amount'){ refreshSummary(); refreshFilterTotal(); }
-      if(k==='note') card.querySelector('.noteclear').classList.toggle('show',!!el.value);
-      if(k==='cat'||k==='method'||k==='date') render(); // may move in/out of current filter
+      else if(k==='note'){ card.querySelector('.noteclear').classList.toggle('show',!!el.value); }
+      else if(k==='cat'||k==='method'||k==='date'){
+        if(!baseMatch(it)) render(); else refreshFilterTotal(); // re-render only if it leaves the current filter
+      }
     });
   });
   // entered toggle — moves item between pending list and the Entered bar
@@ -585,7 +596,7 @@ function wire(card){
     card.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('sel',x===b));
     refreshRow(card,it);
     refreshCounts();
-    if(filter==='business'||filter==='personal') render(); else refreshFilterTotal();
+    if(!baseMatch(it)) render(); else refreshFilterTotal();
   }));
   // note clear
   card.querySelector('.noteclear').addEventListener('click',()=>{
