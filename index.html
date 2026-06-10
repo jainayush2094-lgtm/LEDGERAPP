@@ -145,6 +145,58 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .entered-list.open{display:block}
 
 /* ================= ADD BUTTON ================= */
+/* ===== v14: backup banner ===== */
+.bkbanner{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 14px;border-radius:14px;
+  background:var(--neg-soft);border:1px solid color-mix(in srgb,var(--neg) 25%,transparent)}
+.bkbanner span{flex:1;font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.4}
+.bkbanner button{border:none;border-radius:9px;padding:8px 12px;font-family:'Manrope';font-weight:700;font-size:11.5px;cursor:pointer}
+.bkbanner .bk-now{background:var(--active);color:var(--active-ink)}
+.bkbanner .bk-later{background:transparent;color:var(--muted)}
+/* ===== v14: zoho backlog strip ===== */
+.zstrip{width:100%;display:flex;justify-content:space-between;align-items:center;border:none;cursor:pointer;
+  margin-bottom:16px;padding:12px 16px;border-radius:14px;background:var(--raised);
+  box-shadow:4px 4px 10px var(--sd),-4px -4px 10px var(--sl);text-align:left}
+.zstrip .zs-lab{font-family:'Manrope';font-weight:700;font-size:12.5px;color:var(--ink)}
+.zstrip .zs-lab b{color:var(--neg)}
+.zstrip .zs-amt{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--ink)}
+/* ===== v14: months button + add row ===== */
+.histbtn{border:none;border-radius:10px;padding:9px 13px;font-family:'Manrope';font-weight:700;font-size:11.5px;
+  cursor:pointer;background:var(--inset);color:var(--muted);box-shadow:inset 2px 2px 5px var(--sd),inset -2px -2px 5px var(--sl)}
+.addrow2{display:flex;gap:10px;margin-bottom:18px}
+.addrow2 .addbtn{flex:1;margin-bottom:0}
+.tmplbtn{flex:0 0 54px;border:none;border-radius:16px;background:var(--raised);color:var(--ink);font-size:19px;cursor:pointer;
+  box-shadow:6px 6px 14px var(--sd),-6px -6px 14px var(--sl)}
+.tmplbtn:active{transform:scale(.96)}
+/* ===== v14: monthly summary modal ===== */
+.mscroll{max-height:62vh;overflow-y:auto;margin:0 -4px;padding:0 4px}
+.mcard{border-radius:16px;background:var(--raised);box-shadow:4px 4px 10px var(--sd),-4px -4px 10px var(--sl);
+  padding:14px 15px;margin-bottom:12px}
+.mcard .mhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.mcard .mname{font-weight:800;font-size:14.5px}
+.mcard .mnet{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px}
+.mrow{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;color:var(--muted);margin:3px 0}
+.mrow b{font-family:'JetBrains Mono',monospace;color:var(--ink);font-weight:700}
+.mdelta{font-size:10.5px;font-weight:700;margin-left:6px}
+.mdelta.up{color:var(--neg)} .mdelta.down{color:var(--pos)}
+.mcats{margin-top:10px;border-top:1px solid var(--line);padding-top:9px}
+.mcat{margin:7px 0}
+.mcat .mc-line{display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.mcat .mc-line b{font-family:'JetBrains Mono',monospace;color:var(--ink)}
+.mcat .mc-bar{height:5px;border-radius:4px;background:var(--inset);overflow:hidden}
+.mcat .mc-bar i{display:block;height:100%;background:var(--neg);opacity:.65;border-radius:4px}
+/* ===== v14: templates ===== */
+.trow{display:flex;align-items:center;gap:10px;border-radius:14px;background:var(--raised);
+  box-shadow:4px 4px 10px var(--sd),-4px -4px 10px var(--sl);padding:12px 14px;margin-bottom:10px}
+.trow .t-main{flex:1;min-width:0}
+.trow .t-name{font-weight:800;font-size:13.5px}
+.trow .t-sub{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .t-amt{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13.5px}
+.trow .t-use{border:none;border-radius:9px;padding:8px 13px;background:var(--active);color:var(--active-ink);
+  font-family:'Manrope';font-weight:700;font-size:11.5px;cursor:pointer}
+.trow .t-del{border:none;background:transparent;color:var(--faint);font-size:14px;cursor:pointer;padding:4px}
+.tempty{text-align:center;color:var(--muted);font-size:12.5px;font-weight:600;padding:22px 8px;line-height:1.5}
+.tmpl-save{background:none;border:none;color:var(--note);font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;padding:4px 2px}
 .addbtn{width:100%;border:none;border-radius:16px;background:var(--active);color:var(--active-ink);
   font-family:'Manrope';font-weight:700;font-size:15px;padding:16px;cursor:pointer;margin-bottom:18px;
   box-shadow:6px 6px 14px var(--sd),-6px -6px 14px var(--sl);transition:transform .1s,box-shadow .15s;letter-spacing:-.01em}
@@ -305,6 +357,8 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
     <button class="tbtn" id="themeBtn" onclick="toggleTheme()">☾</button>
   </header>
 
+  <div id="bkBanner" class="bkbanner hid"></div>
+
   <div class="tabbar">
     <button class="tab active" data-type="expense" onclick="setType('expense',this)">Expenses</button>
     <button class="tab" data-type="received" onclick="setType('received',this)">Received</button>
@@ -326,8 +380,11 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
     <div class="scard"><div class="lab">Received · this month</div><div class="val pos" id="sRec">₹0</div></div>
     <div class="scard wide">
       <div><div class="lab">Net this month</div><div class="val" id="sNet">₹0</div></div>
+      <button class="histbtn" onclick="openMonthly()">Months ›</button>
     </div>
   </div>
+
+  <button class="zstrip hid" id="zStrip" onclick="gotoPending()"></button>
 
   <div class="chips" id="chips">
     <button class="chip active" data-f="all" onclick="setFilter('all',this)">All <span class="n" id="c-all">0</span></button>
@@ -364,12 +421,15 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
   <div class="filtertotal hid" id="filterTotal"></div>
   <button class="markall hid" id="markAllBtn" onclick="markAllEnteredInView()"></button>
 
-  <button class="addbtn" id="addBtn" onclick="addEntry()">＋  Add expense</button>
+  <div class="addrow2">
+    <button class="addbtn" id="addBtn" onclick="addEntry()">＋  Add expense</button>
+    <button class="tmplbtn" onclick="openTemplates()" title="Recurring templates">⧉</button>
+  </div>
 
   <div id="list"></div>
 
   <footer>
-    ON-DEVICE · v13 &nbsp;·&nbsp;
+    ON-DEVICE · v14 &nbsp;·&nbsp;
     <a onclick="openExport()">Export PDF</a> &nbsp;·&nbsp;
     <a onclick="exportData()">Backup</a> &nbsp;·&nbsp;
     <a onclick="document.getElementById('imp').click()">Restore</a>
@@ -406,6 +466,29 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
 
 <!-- ===== PRINTABLE STATEMENT (hidden on screen) ===== -->
 <div id="printArea"></div>
+
+<!-- ===== v14: MONTHLY SUMMARY MODAL ===== -->
+<div class="modal-ov" id="monthlyOv" onclick="if(event.target===this)closeMonthly()">
+  <div class="modal">
+    <div class="modal-title">Monthly summary</div>
+    <div class="mscroll" id="monthlyBody"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="mbtn ghost" onclick="closeMonthly()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== v14: TEMPLATES MODAL ===== -->
+<div class="modal-ov" id="tmplOv" onclick="if(event.target===this)closeTemplates()">
+  <div class="modal">
+    <div class="modal-title">Recurring templates</div>
+    <div class="mscroll" id="tmplBody"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="mbtn ghost" onclick="closeTemplates()">Close</button>
+    </div>
+    <div class="modal-hint">To create one: fill any entry, then tap “Save template” on it. Tap “Use” to log it again with today’s date.</div>
+  </div>
+</div>
 
 <script>
 /* ================= CONFIG ================= */
@@ -540,7 +623,10 @@ function cardHTML(it){
       </button>
       <div class="cfoot">
         <span class="stamp">${it.entered?'ENTERED ✓':'PENDING'}</span>
-        <button class="del">Delete</button>
+        <span style="display:flex;gap:16px;align-items:center">
+          <button class="tmpl-save">Save template</button>
+          <button class="del">Delete</button>
+        </span>
       </div>
     </div></div>
   </div>`;
@@ -580,6 +666,7 @@ function wire(card){
       if(k==='amount'){ refreshSummary(); refreshFilterTotal(); }
       else if(k==='note'){ card.querySelector('.noteclear').classList.toggle('show',!!el.value); }
       else if(k==='cat'||k==='method'||k==='date'){
+        refreshSummary(); // v14 fix: method moves cash↔bank, date moves month totals
         if(!baseMatch(it)) render(); else refreshFilterTotal(); // re-render only if it leaves the current filter
       }
     });
@@ -610,6 +697,10 @@ function wire(card){
     items=items.filter(x=>x.id!==it.id); save();
     card.style.opacity='0'; card.style.transform='scale(.97)';
     setTimeout(()=>render(),180);
+  });
+  // v14: save as template
+  card.querySelector('.tmpl-save').addEventListener('click',e=>{
+    saveAsTemplate(it, e.target);
   });
 }
 
@@ -746,7 +837,138 @@ function refreshCounts(){
     personal:rows.filter(x=>x.scope==='personal').length,
     pending:rows.filter(x=>!x.entered).length};
   for(const k in cnt){const el=document.getElementById('c-'+k);if(el)el.textContent=cnt[k];}
+  refreshZohoStrip();
 }
+
+/* ================= v14: ZOHO BACKLOG STRIP ================= */
+function refreshZohoStrip(){
+  const strip=document.getElementById('zStrip');
+  const pend=items.filter(x=>!x.entered);
+  if(!pend.length){ strip.classList.add('hid'); return; }
+  const tot=pend.reduce((s,x)=>s+(parseFloat(x.amount)||0),0);
+  const ne=pend.filter(x=>x.type==='expense').length, nr=pend.length-ne;
+  const parts=[]; if(ne)parts.push(ne+' expense'+(ne===1?'':'s')); if(nr)parts.push(nr+' receipt'+(nr===1?'':'s'));
+  strip.innerHTML=`<span class="zs-lab">Not yet in Zoho · <b>${parts.join(' · ')}</b></span><span class="zs-amt">${fmt(tot)}</span>`;
+  strip.classList.remove('hid');
+}
+function gotoPending(){
+  const btn=document.querySelector('.chip[data-f="pending"]');
+  if(btn) setFilter('pending',btn);
+  window.scrollTo({top:document.getElementById('chips').offsetTop-10,behavior:'smooth'});
+}
+
+/* ================= v14: MONTHLY SUMMARY ================= */
+function monthLabel(ym){const[y,m]=ym.split('-');const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return mo[+m-1]+' '+y;}
+function openMonthly(){
+  // group all items by YYYY-MM
+  const months={};
+  items.forEach(it=>{
+    if(!it.date) return;
+    const ym=it.date.slice(0,7);
+    if(!months[ym]) months[ym]={exp:0,rec:0,cats:{}};
+    const a=parseFloat(it.amount)||0;
+    if(it.type==='expense'){ months[ym].exp+=a; const c=it.cat||'Uncategorised'; months[ym].cats[c]=(months[ym].cats[c]||0)+a; }
+    else months[ym].rec+=a;
+  });
+  const keys=Object.keys(months).sort().reverse().slice(0,12);
+  const body=document.getElementById('monthlyBody');
+  if(!keys.length){ body.innerHTML='<div class="tempty">No dated entries yet.</div>'; }
+  else {
+    body.innerHTML=keys.map((ym,i)=>{
+      const m=months[ym];
+      const prevKey=keys[i+1]; const prev=prevKey?months[prevKey]:null;
+      const dExp=prev&&prev.exp>0 ? Math.round((m.exp-prev.exp)/prev.exp*100) : null;
+      const dRec=prev&&prev.rec>0 ? Math.round((m.rec-prev.rec)/prev.rec*100) : null;
+      const net=m.rec-m.exp;
+      const topCats=Object.entries(m.cats).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      const maxCat=topCats.length?topCats[0][1]:0;
+      const catHTML=topCats.length?`<div class="mcats">${topCats.map(([c,v])=>`
+        <div class="mcat">
+          <div class="mc-line"><span>${esc(c)}</span><b>${fmt(v)}</b></div>
+          <div class="mc-bar"><i style="width:${maxCat?Math.round(v/maxCat*100):0}%"></i></div>
+        </div>`).join('')}</div>`:'';
+      const delta=(d)=> d===null?'':`<span class="mdelta ${d>=0?'up':'down'}">${d>=0?'+':''}${d}% vs prev</span>`;
+      return `<div class="mcard">
+        <div class="mhead"><span class="mname">${monthLabel(ym)}</span>
+          <span class="mnet" style="color:${net>=0?'var(--pos)':'var(--neg)'}">${net<0?'−':''}${fmt(Math.abs(net))} net</span></div>
+        <div class="mrow"><span>Spent${delta(dExp)}</span><b>${fmt(m.exp)}</b></div>
+        <div class="mrow"><span>Received${delta(dRec)}</span><b>${fmt(m.rec)}</b></div>
+        ${catHTML}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('monthlyOv').classList.add('show');
+}
+function closeMonthly(){document.getElementById('monthlyOv').classList.remove('show');}
+
+/* ================= v14: RECURRING TEMPLATES ================= */
+const TPLKEY='ledger_templates_v1';
+let templates=[]; try{templates=JSON.parse(localStorage.getItem(TPLKEY)||'[]');}catch(e){templates=[];}
+const saveTemplates=()=>{try{localStorage.setItem(TPLKEY,JSON.stringify(templates));}catch(e){}};
+function saveAsTemplate(it,btn){
+  const def=it.cat||it.note||'Template';
+  const name=prompt('Template name (e.g. “Shop rent”, “Salaries”, “Electricity”):',def);
+  if(name===null) return;
+  templates.unshift({id:uid(),name:name.trim()||def,type:it.type,amount:it.amount,cat:it.cat,scope:it.scope,method:it.method,note:it.note});
+  saveTemplates();
+  if(btn){const old=btn.textContent;btn.textContent='Saved ✓';setTimeout(()=>{btn.textContent=old;},1400);}
+}
+function openTemplates(){ renderTemplates(); document.getElementById('tmplOv').classList.add('show'); }
+function closeTemplates(){document.getElementById('tmplOv').classList.remove('show');}
+function renderTemplates(){
+  const body=document.getElementById('tmplBody');
+  if(!templates.length){ body.innerHTML='<div class="tempty">No templates yet.<br>Fill an entry (rent, salaries, electricity…) and tap “Save template” on it — then log it monthly in one tap.</div>'; return; }
+  body.innerHTML=templates.map(t=>`<div class="trow" data-id="${t.id}">
+    <div class="t-main">
+      <div class="t-name">${esc(t.name)}</div>
+      <div class="t-sub">${t.type==='expense'?'Expense':'Received'} · ${esc(t.cat||'No category')} · ${esc(t.method||'Cash')}</div>
+    </div>
+    <span class="t-amt">${t.amount?fmt(t.amount):'—'}</span>
+    <button class="t-use">Use</button>
+    <button class="t-del" title="Delete template">✕</button>
+  </div>`).join('');
+  body.querySelectorAll('.trow').forEach(row=>{
+    const t=templates.find(x=>x.id===row.dataset.id);
+    row.querySelector('.t-use').addEventListener('click',()=>useTemplate(t));
+    row.querySelector('.t-del').addEventListener('click',()=>{
+      if(!confirm('Delete template “'+t.name+'”?'))return;
+      templates=templates.filter(x=>x.id!==t.id); saveTemplates(); renderTemplates();
+    });
+  });
+}
+function useTemplate(t){
+  const it={id:uid(),type:t.type,amount:t.amount||'',cat:t.cat||'',scope:t.scope||'business',
+    method:t.method||'Cash',date:today(),note:t.note||'',entered:false};
+  items.unshift(it); save();
+  closeTemplates();
+  if(curType!==t.type){
+    const tab=document.querySelector('.tab[data-type="'+t.type+'"]');
+    if(tab){ setType(t.type,tab); }
+  } else { sortMode='new'; document.getElementById('sortSel').value='new'; render(); }
+  // open the new card for a quick review
+  const card=document.querySelector('.card[data-id="'+it.id+'"]');
+  if(card){ toggleCard(card); card.scrollIntoView({behavior:'smooth',block:'center'}); }
+}
+
+/* ================= v14: BACKUP REMINDER (10 days) ================= */
+const BK_LAST='ledger_lastbackup', BK_SNOOZE='ledger_bksnooze';
+function daysSince(ts){return (Date.now()-ts)/86400000;}
+function checkBackupReminder(){
+  if(items.length<5) return; // nothing worth nagging about yet
+  let last=0,snooze=0;
+  try{last=parseInt(localStorage.getItem(BK_LAST)||'0');}catch(e){}
+  try{snooze=parseInt(localStorage.getItem(BK_SNOOZE)||'0');}catch(e){}
+  if(snooze && Date.now()<snooze) return;
+  if(last && daysSince(last)<10) return;
+  const banner=document.getElementById('bkBanner');
+  const msg=last?('Last backup was '+Math.floor(daysSince(last))+' days ago.'):'Your data lives only on this device.';
+  banner.innerHTML=`<span>${msg} A cleared browser wipes it — save a backup file.</span>
+    <button class="bk-now" onclick="exportData();hideBackupBanner()">Back up</button>
+    <button class="bk-later" onclick="snoozeBackup()">Later</button>`;
+  banner.classList.remove('hid');
+}
+function hideBackupBanner(){document.getElementById('bkBanner').classList.add('hid');}
+function snoozeBackup(){try{localStorage.setItem(BK_SNOOZE,String(Date.now()+2*86400000));}catch(e){} hideBackupBanner();}
 
 /* ================= PDF STATEMENT EXPORT ================= */
 let expType='expense';
@@ -843,10 +1065,11 @@ function doExportExcel(){
 
 /* ================= BACKUP / RESTORE ================= */
 function exportData(){
-  const payload={opening:opening, items:items};
+  const payload={opening:opening, items:items, templates:templates};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='ledger-backup-'+today()+'.json';a.click();URL.revokeObjectURL(a.href);
+  try{localStorage.setItem(BK_LAST,String(Date.now()));}catch(e){}
 }
 function importData(ev){
   const f=ev.target.files[0];if(!f)return;const r=new FileReader();
@@ -855,6 +1078,7 @@ function importData(ev){
     const arr = Array.isArray(d) ? d : (d&&Array.isArray(d.items) ? d.items : null);
     if(arr){if(!confirm('Replace current data with backup ('+arr.length+' entries)?'))return;
       if(d&&d.opening&&typeof d.opening.cash==='number'){opening=d.opening;saveOpening();}
+      if(d&&Array.isArray(d.templates)){templates=d.templates;saveTemplates();}
       items=arr.map(x=>({id:x.id||uid(),type:x.type==='received'?'received':'expense',amount:x.amount||'',
         cat:x.cat||'',scope:x.scope==='personal'?'personal':'business',method:x.method||'Cash',
         date:x.date||today(),note:x.note||'',entered:!!x.entered}));
@@ -876,6 +1100,7 @@ document.querySelectorAll('.presets button').forEach(b=>b.addEventListener('clic
 
 populateCatFilter();
 render();
+checkBackupReminder();
 </script>
 </body>
 </html>
