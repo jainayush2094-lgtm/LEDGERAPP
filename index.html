@@ -78,6 +78,33 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
   background:var(--inset);padding:3px 7px;border-radius:7px;box-shadow:inset 2px 2px 4px var(--sd),inset -2px -2px 4px var(--sl)}
 .bval{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:23px;margin-top:11px;color:var(--ink);font-variant-numeric:tabular-nums}
 .bval.neg{color:var(--neg)}
+/* ===== cash <-> bank transfer ===== */
+.xferbtn{width:100%;border:none;border-radius:14px;padding:12px;margin-bottom:16px;cursor:pointer;
+  font-family:'Manrope';font-weight:700;font-size:13px;letter-spacing:.01em;color:var(--muted);
+  background:var(--raised);box-shadow:4px 4px 11px var(--sd),-4px -4px 11px var(--sl);
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s}
+.xferbtn:active{transform:scale(.99);box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
+.xferbtn .xico{font-size:16px;color:var(--ink)}
+.xhist{max-height:38vh;overflow-y:auto;margin:16px -2px 4px;-webkit-overflow-scrolling:touch}
+.xrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;margin-bottom:8px;
+  background:var(--inset);box-shadow:inset 2px 2px 5px var(--sd),inset -2px -2px 5px var(--sl)}
+.xrow .xdir{width:30px;height:30px;flex:none;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800}
+.xrow .xdir.dep{color:var(--pos);background:var(--pos-soft)}
+.xrow .xdir.wdr{color:var(--note);background:rgba(59,115,214,.13)}
+.xrow .xmid{flex:1;min-width:0}
+.xrow .xflow{font-family:'Manrope';font-weight:700;font-size:13px;color:var(--ink)}
+.xrow .xmeta{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xrow .xamt{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+.xrow .xdel{border:none;background:transparent;color:var(--faint);font-size:18px;cursor:pointer;padding:2px 4px;line-height:1}
+.xrow .xdel:active{color:var(--neg)}
+.xempty{text-align:center;font-size:12px;color:var(--faint);font-weight:600;padding:18px 0}
+.xamtwrap{display:flex;align-items:center;gap:6px;background:var(--inset);border-radius:13px;padding:4px 14px;margin-bottom:14px;
+  box-shadow:inset 3px 3px 7px var(--sd),inset -3px -3px 7px var(--sl)}
+.xamtwrap .cur{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--muted)}
+.xamtwrap input{flex:1;border:none;background:transparent;font-family:'JetBrains Mono',monospace;font-weight:700;
+  font-size:26px;color:var(--ink);padding:10px 0}
+.xamtwrap input:focus{outline:none}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .scard{border-radius:var(--r);padding:15px 16px;background:var(--raised);
   box-shadow:6px 6px 14px var(--sd),-6px -6px 14px var(--sl)}
@@ -375,6 +402,8 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
     </div>
   </div>
 
+  <button class="xferbtn" onclick="openXfer()"><span class="xico">⇄</span> Cash ↔ Bank deposit / withdrawal</button>
+
   <div class="summary">
     <div class="scard"><div class="lab">Spent · this month</div><div class="val neg" id="sExp">₹0</div></div>
     <div class="scard"><div class="lab">Received · this month</div><div class="val pos" id="sRec">₹0</div></div>
@@ -429,7 +458,7 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
   <div id="list"></div>
 
   <footer>
-    ON-DEVICE · v14 &nbsp;·&nbsp;
+    ON-DEVICE · v15 &nbsp;·&nbsp;
     <a onclick="openExport()">Export PDF</a> &nbsp;·&nbsp;
     <a onclick="exportData()">Backup</a> &nbsp;·&nbsp;
     <a onclick="document.getElementById('imp').click()">Restore</a>
@@ -490,6 +519,30 @@ footer a{color:var(--muted);cursor:pointer;text-decoration:none;border-bottom:1p
   </div>
 </div>
 
+<!-- ===== CASH <-> BANK TRANSFER MODAL ===== -->
+<div class="modal-ov" id="xferOv" onclick="if(event.target===this)closeXfer()">
+  <div class="modal">
+    <div class="modal-title">Cash ↔ Bank</div>
+    <div class="seg" id="xferDir">
+      <button class="sel" data-dir="deposit">Deposit → Bank</button>
+      <button data-dir="withdraw">Withdraw → Cash</button>
+    </div>
+    <div class="modal-hint" id="xferFlow" style="margin:0 0 14px">Cash in hand decreases · Bank balance increases</div>
+    <div class="xamtwrap"><span class="cur">₹</span><input id="xferAmt" inputmode="decimal" placeholder="0"></div>
+    <div class="daterow">
+      <div class="fld" style="flex:1"><label>Date</label><input type="date" id="xferDate"></div>
+    </div>
+    <div class="daterow" style="margin-bottom:16px">
+      <div class="fld" style="flex:1"><label>Note (optional)</label><input type="text" id="xferNote" placeholder="e.g. cash deposit slip #"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn ghost" onclick="closeXfer()">Cancel</button>
+      <button class="mbtn solid" onclick="saveXfer()">Record transfer</button>
+    </div>
+    <div class="xhist" id="xferHist"></div>
+  </div>
+</div>
+
 <script>
 /* ================= CONFIG ================= */
 const CATS = {
@@ -498,11 +551,14 @@ const CATS = {
   received: ["Customer Payment","Dealer Payment","Advance","Refund","Interest","Personal","Other"]
 };
 const METHODS = ["Cash","Bank Transfer"];
-const KEY='ledger_capture_v1', TKEY='ledger_theme', OKEY='ledger_opening_v1';
+const KEY='ledger_capture_v1', TKEY='ledger_theme', OKEY='ledger_opening_v1', XKEY='ledger_transfers_v1';
 
 /* ================= STATE ================= */
 let items=[]; try{items=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){items=[];}
 let opening={cash:0,bank:0}; try{const o=JSON.parse(localStorage.getItem(OKEY));if(o&&typeof o.cash==='number')opening=o;}catch(e){}
+let transfers=[]; try{transfers=JSON.parse(localStorage.getItem(XKEY)||'[]');}catch(e){transfers=[];}
+const saveTransfers=()=>{try{localStorage.setItem(XKEY,JSON.stringify(transfers));}catch(e){}};
+let xferDir='deposit';
 let curType='expense', filter='all', catFilter='', methFilter='', sortMode='new', listFrom='', listTo='', enteredOpen=false;
 
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){}};
@@ -516,6 +572,64 @@ function editOpening(which){
   if(isNaN(n)){ alert('Please enter a number.'); return; }
   opening[which]=n; saveOpening(); refreshSummary();
 }
+
+/* ================= CASH <-> BANK TRANSFER ================= */
+function setXferDir(dir){
+  xferDir=dir;
+  document.querySelectorAll('#xferDir button').forEach(b=>b.classList.toggle('sel',b.dataset.dir===dir));
+  document.getElementById('xferFlow').textContent = dir==='deposit'
+    ? 'Cash in hand decreases · Bank balance increases'
+    : 'Bank balance decreases · Cash in hand increases';
+}
+function openXfer(){
+  setXferDir('deposit');
+  document.getElementById('xferAmt').value='';
+  document.getElementById('xferNote').value='';
+  document.getElementById('xferDate').value=today();
+  renderXferHist();
+  document.getElementById('xferOv').classList.add('show');
+  setTimeout(()=>document.getElementById('xferAmt').focus(),120);
+}
+function closeXfer(){ document.getElementById('xferOv').classList.remove('show'); }
+function saveXfer(){
+  const raw=document.getElementById('xferAmt').value;
+  const amt=parseFloat(String(raw).replace(/[, ₹]/g,''));
+  if(isNaN(amt)||amt<=0){ alert('Enter an amount greater than 0.'); return; }
+  const date=document.getElementById('xferDate').value||today();
+  const note=document.getElementById('xferNote').value.trim();
+  transfers.unshift({id:uid(),dir:xferDir,amount:amt,date,note});
+  saveTransfers();
+  refreshSummary();
+  document.getElementById('xferAmt').value='';
+  document.getElementById('xferNote').value='';
+  renderXferHist();
+  document.getElementById('xferAmt').focus();
+}
+function deleteXfer(id){
+  if(!confirm('Delete this transfer? Balances will adjust back.')) return;
+  transfers=transfers.filter(t=>t.id!==id);
+  saveTransfers(); refreshSummary(); renderXferHist();
+}
+function renderXferHist(){
+  const box=document.getElementById('xferHist');
+  if(!transfers.length){ box.innerHTML='<div class="xempty">No transfers yet.</div>'; return; }
+  const rows=transfers.slice().sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:0));
+  box.innerHTML=rows.map(t=>{
+    const dep=t.dir==='deposit';
+    const flow=dep?'Cash → Bank':'Bank → Cash';
+    const meta=niceDate(t.date)+(t.note?' · '+esc(t.note):'');
+    return `<div class="xrow">
+      <span class="xdir ${dep?'dep':'wdr'}">${dep?'↑':'↓'}</span>
+      <span class="xmid"><div class="xflow">${flow}</div><div class="xmeta">${meta}</div></span>
+      <span class="xamt">${fmt(t.amount)}</span>
+      <button class="xdel" onclick="deleteXfer('${t.id}')" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+}
+document.getElementById('xferDir').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(b) setXferDir(b.dataset.dir);
+});
+
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const fmt=n=>{const v=Math.round(parseFloat(n)||0);return '₹'+v.toLocaleString('en-IN');};
@@ -818,6 +932,12 @@ function refreshSummary(){
     if(it.type==='expense') bal[k]-=a; else bal[k]+=a;
     if(thisMonth(it.date)){ if(it.type==='expense')exp+=a; else rec+=a; }
   });
+  // cash <-> bank transfers move money between the two, never touching spent/received
+  transfers.forEach(t=>{
+    const a=parseFloat(t.amount)||0;
+    if(t.dir==='deposit'){ bal.cash-=a; bal.bank+=a; }   // cash -> bank
+    else { bal.bank-=a; bal.cash+=a; }                    // bank -> cash (withdraw)
+  });
   // balance cards
   const bc=document.getElementById('bCash'), bb=document.getElementById('bBank');
   bc.textContent=(bal.cash<0?'−':'')+fmt(Math.abs(bal.cash)); bc.className='bval num'+(bal.cash<0?' neg':'');
@@ -1065,7 +1185,7 @@ function doExportExcel(){
 
 /* ================= BACKUP / RESTORE ================= */
 function exportData(){
-  const payload={opening:opening, items:items, templates:templates};
+  const payload={opening:opening, items:items, templates:templates, transfers:transfers};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='ledger-backup-'+today()+'.json';a.click();URL.revokeObjectURL(a.href);
@@ -1079,6 +1199,9 @@ function importData(ev){
     if(arr){if(!confirm('Replace current data with backup ('+arr.length+' entries)?'))return;
       if(d&&d.opening&&typeof d.opening.cash==='number'){opening=d.opening;saveOpening();}
       if(d&&Array.isArray(d.templates)){templates=d.templates;saveTemplates();}
+      if(d&&Array.isArray(d.transfers)){transfers=d.transfers.map(t=>({id:t.id||uid(),
+        dir:t.dir==='withdraw'?'withdraw':'deposit',amount:parseFloat(t.amount)||0,
+        date:t.date||today(),note:t.note||''}));saveTransfers();}
       items=arr.map(x=>({id:x.id||uid(),type:x.type==='received'?'received':'expense',amount:x.amount||'',
         cat:x.cat||'',scope:x.scope==='personal'?'personal':'business',method:x.method||'Cash',
         date:x.date||today(),note:x.note||'',entered:!!x.entered}));
