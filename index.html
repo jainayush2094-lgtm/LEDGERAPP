@@ -555,6 +555,11 @@ const KEY='ledger_capture_v1', TKEY='ledger_theme', OKEY='ledger_opening_v1', XK
 
 /* ================= STATE ================= */
 let items=[]; try{items=JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){items=[];}
+/* one-time migration: old entries may lack method (counted wrongly as Bank) or hold "1,500"-style amounts (parsed as 1) */
+(function(){let dirty=false;items.forEach(x=>{
+  if(!x.method){x.method='Cash';dirty=true;}
+  if(typeof x.amount==='string'&&/[^0-9.]/.test(x.amount)){x.amount=x.amount.replace(/[^0-9.]/g,'');dirty=true;}
+});if(dirty){try{localStorage.setItem(KEY,JSON.stringify(items));}catch(e){}}})();
 let opening={cash:0,bank:0}; try{const o=JSON.parse(localStorage.getItem(OKEY));if(o&&typeof o.cash==='number')opening=o;}catch(e){}
 let transfers=[]; try{transfers=JSON.parse(localStorage.getItem(XKEY)||'[]');}catch(e){transfers=[];}
 const saveTransfers=()=>{try{localStorage.setItem(XKEY,JSON.stringify(transfers));}catch(e){}};
@@ -695,7 +700,7 @@ function addEntry(){
 
 /* ================= CARD ================= */
 function rowSummary(it){
-  const amt = it.amount ? '₹'+Number(it.amount).toLocaleString('en-IN') : '₹0';
+  const amt = it.amount ? '₹'+(parseFloat(it.amount)||0).toLocaleString('en-IN') : '₹0';
   const cat = it.cat ? esc(it.cat) : '<span class="placeholder">No category</span>';
   const m = it.method || 'Cash';
   const sub = `${m} · ${it.scope==='personal'?'Personal':'Business'} · ${niceDate(it.date)}`;
@@ -775,7 +780,9 @@ function wire(card){
     if(el.dataset.k==='entered') return;
     const k=el.dataset.k, ev=(el.tagName==='SELECT'||el.type==='date')?'change':'input';
     el.addEventListener(ev,()=>{
-      it[k]=el.value; save();
+      let v=el.value;
+      if(k==='amount'){const clean=v.replace(/[^0-9.]/g,'');if(clean!==v)el.value=clean;v=clean;}
+      it[k]=v; save();
       refreshRow(card,it);
       if(k==='amount'){ refreshSummary(); refreshFilterTotal(); }
       else if(k==='note'){ card.querySelector('.noteclear').classList.toggle('show',!!el.value); }
@@ -928,7 +935,7 @@ function refreshSummary(){
   let bal={cash:opening.cash||0, bank:opening.bank||0};
   items.forEach(it=>{
     const a=parseFloat(it.amount)||0;
-    const k=methodKey(it.method);
+    const k=methodKey(it.method||'Cash');
     if(it.type==='expense') bal[k]-=a; else bal[k]+=a;
     if(thisMonth(it.date)){ if(it.type==='expense')exp+=a; else rec+=a; }
   });
